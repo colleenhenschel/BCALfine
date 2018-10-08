@@ -1,0 +1,106 @@
+
+
+#include "SteppingAction.hh"
+#include "G4SteppingManager.hh"
+
+#include "G4SystemOfUnits.hh"
+
+#include "G4ThreeVector.hh"
+#include "G4ios.hh"
+#include "G4GeometryTolerance.hh"
+#include "G4UnitsTable.hh"
+
+#include "DataManager.hh"
+#include "MCEvent.hh"
+
+#include "G4OpticalPhoton.hh"
+#include "G4TransportationManager.hh"
+
+//------------------------------------------------------------------------------
+
+SteppingAction::SteppingAction()
+{ 
+  dataManager = DataManager::GetInstance();
+
+  aTrack = 0;
+  preStepPoint  = 0;
+  preStepPV     = 0;
+  preStepPVname = "";
+  hitPos  = G4ThreeVector(0.*mm, 0.*mm, 0.*mm);
+  vertPos = G4ThreeVector(0.*mm, 0.*mm, 0.*mm);
+
+  proc_name = "";
+  particle_name = "";
+
+  postStepPoint = 0;
+  postStepPV    = 0;
+  preStepPVname ="";
+
+  trackID=0;
+	curcopynum = -1;
+	curmodule = -1;
+  particleHit = new fiberHit();
+  optTransm = new opticalHit();
+}
+
+//-------------------------------------------------------------------------------
+SteppingAction::~SteppingAction()
+{
+  if(particleHit) {delete particleHit; particleHit=0;}
+  if(optTransm)   {delete optTransm; optTransm=0;}
+}
+//-------------------------------------------------------------------------------
+
+void SteppingAction::UserSteppingAction(const G4Step* aStep)
+{
+  aTrack = aStep->GetTrack();
+  preStepPoint     = aStep->GetPreStepPoint();
+  preStepPV  = preStepPoint->GetTouchableHandle()->GetVolume();  
+  preStepPVname = preStepPV->GetName();
+	
+
+	postStepPoint = aStep->GetPostStepPoint();
+  postStepPV    = postStepPoint->GetTouchableHandle()->GetVolume();
+  if(postStepPV!=0)
+    postStepPVname = postStepPV->GetName();
+  else
+    postStepPVname ="";
+
+  if(aTrack->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
+  { 
+		if(preStepPVname.contains("pvCladding1") && postStepPVname.contains("pvScintFiber"))
+		{
+			particleHit->SetKEIn(aTrack->GetKineticEnergy()/MeV);
+		}
+    else if(preStepPVname.contains("pvScintFiber"))
+  	{
+			//curcopynum = preStepPoint->GetTouchableHandle()->GetCopyNumber(3);
+			//curmodule = preStepPoint->GetTouchableHandle()->GetCopyNumber(5);
+		  particleHit->SetTrackID(aTrack->GetTrackID());
+		  particleHit->SetParentID(aTrack->GetParentID());
+		  particleHit->SetGlobalTime(aTrack->GetGlobalTime()/ns);
+		  particleHit->SetLocalTime(aTrack->GetLocalTime()/ns);
+		  particleHit->SetEnergyDep(aStep->GetTotalEnergyDeposit()/MeV);
+	  	particleHit->SetFiberID(curcopynum);
+			particleHit->SetModuleID(curmodule);
+		  vertPos = aTrack->GetVertexPosition();	      
+		  particleHit->SetVertexPos(TVector3(vertPos.x()/cm, 
+							     vertPos.y()/cm, 
+							     vertPos.z()/cm));
+	  
+		  if(aTrack->GetTrackID()==1) 
+		    particleHit->SetCreatorProc("generator");
+	  	else 
+	    {
+	      proc_name = aTrack->GetCreatorProcess()->GetProcessName();
+	      particleHit->SetCreatorProc(proc_name.data());}
+	  //aTrack->GetDefinition()
+	  		particle_name = aTrack->GetParticleDefinition()->GetParticleName();
+	  		particleHit->SetTrackName(particle_name.data());
+	  		dataManager->AddFiberHit(particleHit);
+  		}
+
+			if(postStepPVname.contains("pvCladding1"))
+				particleHit->SetKEOut(aTrack->GetKineticEnergy()/MeV);
+    }
+}

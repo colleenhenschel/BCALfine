@@ -1,0 +1,48 @@
+/run/verbose 0
+/process/verbose 0
+/physic/addPhysics standard_opt3
+/run/initialize
+/process/eLoss/binsDEDX 480
+/run/physicsModified
+/process/eLoss/binsLambda 480
+/run/physicsModified
+/physic/setGCut 4.5 mm
+/physic/setPCut 0.16 mm
+/physic/setECut 0.16 mm
+/primaryGenerator/setFixedEnergyFlag false
+/primaryGenerator/setParallelBeamFlag false
+/primaryGenerator/setBeamPositionOffset 0. 0. 0. mm
+/primaryGenerator/setFieldSize 1000 mm
+/userRun/setOutFileName ./test.root
+/run/beamOn 1000
+/control/execute macro/vis.mac
+/vis/open OGL
+/vis/sceneHandler/create OGL
+/vis/viewer/create ! ! 600
+/vis/viewer/refresh
+/vis/viewer/set/viewpointThetaPhi 0 0 deg
+/vis/viewer/zoom 2
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/edge
+/vis/viewer/set/style surface
+/vis/scene/add/volume
+/vis/drawVolume pvWorld
+/vis/scene/create
+/vis/scene/add/volume pvWorld
+/vis/sceneHandler/attach
+/vis/scene/add/trajectories
+/tracking/storeTrajectory 1
+/vis/scene/notifyHandlers
+/vis/modeling/trajectories/create/drawByParticleID
+/vis/modeling/trajectories/drawByParticleID-0/set e+ red
+/vis/scene/notifyHandlers scene-0
+/vis/modeling/trajectories/drawByParticleID-0/set e- blue
+/vis/scene/notifyHandlers scene-0
+/vis/modeling/trajectories/drawByParticleID-0/set opticalphoton cyan
+/vis/scene/notifyHandlers scene-0
+/vis/modeling/trajectories/drawByParticleID-0/set proton yellow
+/vis/scene/notifyHandlers scene-0
+/vis/modeling/trajectories/drawByParticleID-0/set mu- magenta
+/vis/scene/notifyHandlers scene-0
+/vis/scene/endOfEventAction accumulate 3
+/run/beamOn 30
